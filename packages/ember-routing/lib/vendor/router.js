@@ -923,7 +923,7 @@ define("router",
         if (handlerChanged) {
           handlers.entered.push(newHandler);
           if (oldHandler) { handlers.exited.unshift(oldHandler); }
-        } else if (contextChanged || oldHandler.context !== newHandler.context || queryParamsChanged) {
+        } else if (contextChanged || oldHandler.context !== newHandler.context || queryParamsChanged || exitedChildTempRoute(oldHandler, oldHandlers[i+1], newHandlers[i+1])) {
           contextChanged = true;
           handlers.updatedContext.push(newHandler);
         } else {
@@ -936,6 +936,20 @@ define("router",
       }
 
       return handlers;
+    }
+    
+    /**
+      @private
+
+      Determines if a route is exiting its loading/error route
+      Called by partitionHandlers only if the route's context has not changed since the last transition.
+    **/
+    function exitedChildTempRoute(oldHandler, oldChildHandler, newChildHandler) {
+      if(!oldChildHandler || !newChildHandler || oldChildHandler.handler === newChildHandler.handler) { return false; }
+      var childRouteNamesToCheck = ['.loading','.error'],
+          childHandlerNameSegments = oldChildHandler.name.split(oldHandler.name);
+      if(childHandlerNameSegments.length !== 2 || childHandlerNameSegments[0] !== '' || childRouteNamesToCheck.indexOf(childHandlerNameSegments[1]) === -1) { return false; }
+      return true;
     }
 
     function trigger(router, handlerInfos, ignoreFailure, args) {
